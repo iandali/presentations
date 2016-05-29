@@ -1,0 +1,205 @@
+Google Calendar API
+如何使用PHP串接
+30 May 2016
+Tags: google, calendar, php
+
+Clean Tan
+snakehopper@gmail.com
+https://www.facebook.com/snakehopper
+https://plus.google.com/+rajawari
+
+* 建立Google Cloud Platform 專案
+
+準備一個官方用GMail，以便建立專案並[[https://console.developers.google.com/start/api?id=calendar&hl=zh-TW][啟用API]]
+
+建立 OAuth Client ID
+
+- `Create` `Credentials`
+- application type: `Other`
+
+下載憑證為 `client_secrets.json` 
+
+.caption  當心 client_secrets.json 被URL static 存取
+
+* 安裝Google Client Library (PHP)
+
+	php composer.phar require google/apiclient:1.*
+
+其他安裝方式 [[https://developers.google.com/api-client-library/php/start/installation?hl=zh-TW][參考]]
+
+* 透過 OAuth 2.0 存取API
+
+OAuth 2.0: 不需知道使用者帳密，亦能代表其身份做一些授權內的事
+
+- 轉址到Google OAuth 2.0 伺服器，使用者同意授權
+- 授權成功後，會轉回來並給 authorization Code
+- 拿 authorization code 換 access token
+
+Google OAuth Server 會檢查 `Redirect URIs` 是否為預設的那些，否則會不幫忙redirect
+
+* Redirect URIs 注意事項
+
+接authorization code 的endpoint 下的所有resources 都能取得該 code
+
+- html 下的外部連接，其 http Header 的 `Referer` 將是當下含 `code` 的url
+
+* new Google_Client()
+
+假設 `oauth2callback.php` 是要接 auth code 的地方，通過以下方法來 configure client object
+
+	$client = new Google_Client();
+	$client->setAuthConfigFile('client_secrets.json');
+	$client->setAccessType("offline");
+	$client->addScope(Google_Service_Calendar::CALENDAR);
+	$client->setRedirectUri('http://' . $_SERVER['HTTP_HOST'] . '/oauth2callback.php');
+
+`Google_Service_Calendar` 的定義參考[[https://github.com/google/google-api-php-client/blob/v1-master/src/Google/Service/Calendar.php][GitHub]]
+
+* 取得使用者授權存取日曆
+
+	$auth_url = $client->createAuthUrl();
+
+	header('Location: ' . filter_var($auth_url, FILTER_SANITIZE_URL));
+
+Google 完成使用者認證與API授權後，會導向指定的 Uri (_如:/oauth2callback.php_)
+
+* 用 authorization code 去交換 access token
+
+如果使用者拒絕權限：
+
+	https://appspot.com/oauth2callback.php?error=access_denied
+
+
+指定的 `oauth2callback.php` 會收到 code參數如下：
+
+	https://appspot.com/oauth2callback.php?code=4/P7q7W91a-oMsCeLvIaQm6bTrgtp7
+
+拿到 `access_token` ，存在資料庫以備使用
+
+	$client->authenticate($_GET['code']);
+	$access_token = $client->getAccessToken();
+
+* 已有access token, 放入client object
+
+* index.php
+
+.code php-gcal/index.php
+
+* oauth2callback.php
+
+.code php-gcal/oauth2callback.php
+
+* Google Calendar API
+
+* REST API resources
+
+Event
+
+Calendar
+
+Calendar List
+
+Setting
+
+ACL
+
+Color
+
+Free/busy
+
+* Event resource
+
+.link https://developers.google.com/google-apps/calendar/v3/reference/events?hl=zh-TW#resource-representations 資料結構
+
+- 標題、開始結束時間、參與的人
+- 單次活動、循環活動
+
+* Calendar
+
+.link https://developers.google.com/google-apps/calendar/v3/reference/calendars?hl=zh-TW 資料結構
+
+- Events 的集合
+- 日曆敘述、預設時區
+
+* Calendar List
+
+.link https://developers.google.com/google-apps/calendar/v3/reference/calendarList?hl=zh-TW 資料結構
+
+- 該使用者的日曆清單 (網頁上左邊的那塊)
+- 使用者自訂的一些metadata： 顏色、新事件通知
+
+Calendars 和 CalendarList的差別
+
+	動作 		Calendars 				CalendarList
+
+	insert 	建立新日曆(自己是creator) 	加入別人的日曆
+	delete 	刪除一日曆 				從清單中移除
+	get 	取得日曆meta: 標題、時區 		取得包含個人化日曆meta
+	patch 	修改日曆meta 				修改個人化meta
+
+* REST API 與 Client Library 的對照
+
+library class 命名方式
+
+	REST API Resource 	class
+	Events 				Google_Service_Calendar_Events_Resource
+	Calendars 			Google_Service_Calendar_Calendars_Resource
+
+查表 [[https://developers.google.com/google-apps/calendar/v3/reference/events/get?hl=zh-TW][Events: get]] ，則 `$service->events->get`
+
+	$service = new Google_Service_Calendar($client);
+	$event = $service->events->get('primary', "eventId");
+	echo $event->getSummary();
+	echo json_encode($event);
+
+查表 [[https://developers.google.com/google-apps/calendar/v3/reference/calendars/update?hl=zh-TW#request-body][Calendars: update]] ，則 `$service->calendars->get`
+
+	// First retrieve the calendar from the API.
+	$calendar = $service->calendars->get('primary');
+
+	$calendar->setSummary('New Summary');
+	$updatedCalendar = $service->calendars->update('primary', $calendar);
+	echo $updatedCalendar->getEtag();
+
+
+* 知道使用者某天的日曆行程
+
+.link https://developers.google.com/google-apps/calendar/v3/reference/events/list?hl=zh-TW#request Events: list
+
+	$service = new Google_Service_Calendar($client);
+
+	$optParams = array('q' => "Dinner with John");
+
+	$events = $service->events->listEvents('primary', $optParams);
+	echo json_encode($events);
+
+* 日曆有更新，push notifications 到指定的 url 上
+
+.link https://developers.google.com/google-apps/calendar/v3/reference/events/watch?hl=zh-TW Events: watch
+
+需跟 [[https://developers.google.com/google-apps/calendar/v3/push?hl=zh-TW#registering][Google 認證該domain 所有權]]， 且HTTPS address only
+
+Request Body
+
+	{
+	  "id": "someUUID",
+	  "token": "target=myApp-myCalendarChannelDest",
+	  "type": "web_hook",
+	  "address": "https://mydomain.com/notifications",
+	  "params": {
+	    "ttl": "3600"
+	  }
+	}
+
+API Call
+
+	$service = new Google_Service_Calendar($client);
+	$postBody = json_encode($meta);
+	$events = $service->events->listEvents('primary', $postBody);
+	echo json_encode($events);
+
+* References
+
+.link https://developers.google.com/api-client-library/php/auth/web-app?hl=zh-TW#creatingcred Google APIs Client for PHP documentation
+
+.link https://developers.google.com/google-apps/calendar/v3/reference/?hl=zh-TW Calendar API reference documentation
