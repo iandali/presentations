@@ -12,8 +12,10 @@ https://plus.google.com/+rajawari
 
 siteUrl = https://asiayo.com
 
-預設參數:
+搜尋參數:
 - 最近30天
+- 最常被搜尋到的10筆關鍵字
+- 按點擊次數排序
 - 國家: 香港、台灣、日本、新加坡、馬來西亞、美國
 
 .link https://gopher-ali.appspot.com/api/asiayo/gsearch
