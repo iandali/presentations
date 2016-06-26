@@ -1,0 +1,74 @@
+Gooogle Search Analytics
+了解自己網站在Google Search的排名
+27 Jun 2016
+Tags: google, search
+
+Clean Tan
+snakehopper@gmail.com
+https://www.facebook.com/snakehopper
+https://plus.google.com/+rajawari
+
+* Google Search上的分析報告
+
+siteUrl = https://asiayo.com
+
+預設參數:
+- 最近30天
+- 國家: 香港、台灣、日本、新加坡、馬來西亞、美國
+
+.link https://gopher-ali.appspot.com/api/asiayo/gsearch
+
+* 自訂搜尋參數
+
+以 `POST` json body 的方式將參數送出
+
+參數可參考[[https://developers.google.com/webmaster-tools/v3/searchanalytics/query#request-body][官方文件]] ，國家代碼採 [[https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3][ISO_3166-1_alpha-3]]
+
+或者，參考每次查詢回傳的 `requestBody` 
+
+	  "aggregationType": string,
+	  "rowLimit": integer,
+	  "startRow": integer
+	  "startDate": string,		//required
+	  "endDate": string,		//required
+	  "dimensions": [string],
+	  "searchType": string,
+	  "dimensionFilterGroups": [
+	    {
+	      "groupType": string,
+	      "filters": [
+	        {
+	          "dimension": string,
+	          "operator": string,
+	          "expression": string
+	        }
+	      ]
+	    }
+	  ]
+
+* 自訂搜尋範例
+
+分析 *民宿* 在搜尋結果報告
+
+	{
+				"dimensionFilterGroups": [
+					{
+						"filters": [
+							{
+								"dimension": "query",
+								"expression": "民宿"
+							}
+						]
+					}
+				],
+				"dimensions": [
+					"query"
+				],
+				"endDate": "2016-06-26",
+				"rowLimit": 10,
+				"startDate": "2016-05-27"
+	}
+
+* References
+
+.link https://developers.google.com/webmaster-tools/v3/searchanalytics/query 
