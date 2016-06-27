@@ -20,6 +20,20 @@ siteUrl = https://asiayo.com
 
 .link https://gopher-ali.appspot.com/api/asiayo/gsearch
 
+* 分析結果
+
+*clicks* *點擊次數* - 從 Google 搜尋結果頁面將使用者導向至您網站的點擊次數。
+
+*ctr*  *點閱率* ：將點擊次數除以曝光次數後所得到的數字。如果資料列中未提供曝光次數，CTR 會以破折號 (-) 顯示，因為 CTR 的除數為零。
+
+*impression* 曝光次數 - 在 Google 搜尋結果中，向使用者顯示的可前往您網站的連結數量 (即使使用者並未將畫面捲動至該連結)。不過，如果使用者只查看了第 1 頁，而該連結位於第 2 頁，則不計入曝光次數。該數量是由系統根據網站或網頁匯總而得。如果頁面可供無限捲動 (例如圖片搜尋)，則該項目必須捲動至畫面當中才能計入曝光次數。
+
+*keys* - A list of the dimension values for that row, grouped according to the dimensions in the request, in the order specified in the request.
+
+*position* - 您網站的「最高」排名結果的平均排名。舉例來說，如果您網站的 3 個排名結果分別為第 2、第 4 和第 6，報表中的排名即為第 2。如果第二次查詢傳回的排名為第 3、第 5 和第 9，那麼您的平均排名即為 (2 + 3)/2 = 2.5。如果資料列中未提供曝光次數，這部份會以破折號 (-) 顯示，因為這個排名不存在。
+
+.link https://support.google.com/webmasters/answer/6155685#choosingmetrics 說明來源
+
 * 自訂搜尋參數
 
 以 `POST` json body 的方式將參數送出
