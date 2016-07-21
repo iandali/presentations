@@ -1,0 +1,303 @@
+Facebook Messenger Platform
+
+Clean
+snakehopper@gmail.com
+https://www.facebook.com/snakehopper
+https://plus.google.com/+rajawari
+
+* Entry Points
+
+.link https://m.me/snakehopper
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13466576_278990152490996_1363190132_n.png 100 _
+
+.caption Configure Page to use the [[https://www.facebook.com/business/help/1626883224209011]["Send Message" call to action (CTA)]]
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13480198_1744992232423784_392293486_n.png 100 _
+
+.caption Use the `data-ref` param to pass state with the authentication.
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13509238_1745176532433732_1109289122_n.png 100 _
+
+.caption Wouldn't receive any events, until the person sends a message.
+
+* Setup Webhooks
+
+Facebook App product settings: Callback URL, Verify Token, Subscription Fields
+
+Callback server handler received `GET` request like below:
+
+	/?hub.mode=subscribe&hub.challenge=1305430317&hub.verify_token=184ahXP52ssJLhKo7hh8K4KP5n
+
+Verify `hub.mode` and `hub.verify_token`, Response `hub.challenge` value with HTTP 200
+
+.caption Note that [[http://www.php.net/manual/en/language.variables.external.php][PHP will convert `.` in the parameter names to `_`]]
+
+* Get a Page Access Token
+
+Each time you select that Page a new token will be generated. 
+
+However, any previous tokens created will continue to function.
+
+* Subscribe the App to the Page
+
+some text
+
+.caption A page may have up to 10 apps subscribing to it.
+
+Again, more text
+
+* Unsubscribe
+
+Warning alert: returns not a 2xx status, respond takes longer than 20sec for over 15mins
+
+Disabled alert: continues to fail for 8 hours
+
+*HOWFIX*: fixed respond issue, re-add webhook and re-subscribe app to the page
+
+* Batching
+
+Facebook may batch events in a single callback, especially during moments of high load. 
+
+Be sure to iterate over `entry` and `messaging` in the response to capture all the events sent in the request.
+
+* Security
+
+HTTP request header `X-Hub-Signature` contains the SHA1 signature of the request payload.
+
+Validate integrity with the app secret as the key, and prefixed with `sha1=`
+
+Calculation is made on the _escaped_unicode_version_ of the payload, with lower case hex digits
+ex: the string `äöå` should be escaped to `\u00e4\u00f6\u00e5`
+
+.link https://developers.facebook.com/docs/messenger-platform/webhook-reference#security
+
+* Some Webhook Reference
+
+* Message Received Callback
+
+payload structure: sender.id, recipient.id, timestamp, *message* object
+
+`message` object has two types, *text*, *attachment*
+
+`attachment` object is an array contains a `type` of _image_, _audio_,  _video_, _file_ or _location_
+- multimedia payload has `url` property
+- location payload use `coordinates.lat` & `coordinates.long` properties
+
+RAW data:
+
+	{"object":"page",
+	"entry":[{"id":STRING,"time":MILLISECONDS,
+		"messaging":[{"sender":{"id":STRING},"recipient":{"id":STRING},"timestamp":MILLISECONDS,
+		"message":{"mid":"mid.1469059861872:e83949f4e604f2cb68","seq":1,"text":"hello"}}]}]}
+
+.link https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-received reference
+
+* Postback Received Callback
+
+Postbacks occur when:
+
+- Postback button
+- Get Started button
+- Persistent menu
+- Structured Message is tapped
+
+.link https://developers.facebook.com/docs/messenger-platform/webhook-reference/postback-received reference
+
+* Send API
+
+Target URL
+
+	https://graph.facebook.com/v2.6/me/messages?access_token=PAGE_ACCESS_TOKEN
+
+* Send Text Message
+
+Content-Type: application/json
+
+*POST* Payload Body:
+
+	{
+	  "recipient":{
+	  	"id":"USER_ID"
+	  },
+	  "message":{
+	  	"text":"hello, world!"
+	  }
+	}
+
+* Send Attachment (URL)
+
+Content-Type: application/json
+
+*POST* Payload Body:
+
+	{
+	  "recipient":{
+	    "id":"USER_ID"
+	  },
+	  "message":{
+	    "attachment":{
+	      "type":"image",
+	      "payload":{
+	        "url":"https://petersapparel.com/img/shirt.png"
+	      }
+	    }
+	  }
+	}
+
+* Send Attachment (File upload)
+
+*POST* *Form*:
+
+	recipient='{"id":"USER_ID"}'
+	message='{"attachment":{"type":"image", "payload":{}}}'
+	filedata=@/tmp/shirt.png
+
+.link https://developers.facebook.com/docs/messenger-platform/send-api-reference#attachment attachment type
+
+* Send Generic Template
+
+To send a horizontal scrollable carousel of items
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13509251_1026555627430343_1803381600_n.png 400 _
+
+.link https://developers.facebook.com/docs/messenger-platform/send-api-reference/generic-template reference
+
+* Send Button Template
+
+To send a text and buttons to request input from the user
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13509162_1732711383655205_1306472501_n.png 400 _
+
+.link https://developers.facebook.com/docs/messenger-platform/send-api-reference/button-template reference
+
+* Send Receipt Template
+
+To send a order confirmation, with the transaction summary and description for each item..
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13466939_915325738590743_1056699384_n.png 400 _
+
+.link https://developers.facebook.com/docs/messenger-platform/send-api-reference/receipt-template reference
+
+* Quick Replies
+
+To present buttons to the user, with keyboard less prominent
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13509243_818831098218750_489238139_n.png 400 _
+
+.caption quick_replies is limited to 10
+
+.link https://developers.facebook.com/docs/messenger-platform/send-api-reference/quick-replies reference
+
+* Plugin Reference
+
+.link https://developers.facebook.com/docs/messenger-platform/plugin-reference/send-to-messenger Send-to-Messenger Plugin
+
+Trigger [[https://developers.facebook.com/docs/messenger-platform/webhook-reference/authentication][authentication callback]]. You can pass in data to know which user and transaction was tied to the authentication event
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13571135_580861125428370_932811201_n.png 100 _
+
+.link https://developers.facebook.com/docs/messenger-platform/plugin-reference/message-us Message-Us Plugin
+
+Used to immediately start a conversation and send the person to Messenger.
+
+Does not trigger a callback.
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13503475_887082391403702_1479658139_n.png 100 _
+
+* Thread Settings
+
+*POST* call to
+
+	https://graph.facebook.com/v2.6/me/thread_settings?access_token=PAGE_ACCESS_TOKEN
+
+with the parameters in the body
+
+	{
+	  "setting_type":"greeting",
+	  "greeting":{
+	    "text":"Welcome to My Company!"
+	  }
+	}
+
+`Content-Type:application/json` 
+
+* Greeting Text
+
+Fields: 
+- setting_type
+- greeting.text
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13509175_122152928211838_1175374788_n.png 400 _
+
+* Get Started Button
+
+When this button is tapped, you can then present a personalized message to greet the user or present buttons to prompt him or her to take an action.
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13503503_254914944879658_966996612_n.png 400 _
+
+.link https://developers.facebook.com/docs/messenger-platform/thread-settings/get-started-button reference
+
+* Persistent Menu
+
+The Persistent Menu is a menu that is always available to the user. This menu should contain top-level actions that users can enact at any point.
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13509228_581512925362726_878211705_n.png 400 _
+
+.caption `call_to_actions` is limited to 5. [[https://developers.facebook.com/docs/messenger-platform/thread-settings/persistent-menu][reference]]
+
+* Account Linking
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2365-6/13591491_1736723439929599_1019255953_n.png 400 _
+
+.link https://developers.facebook.com/docs/messenger-platform/account-linking/link-account reference
+
+* User Profile API
+
+make a *GET* call to
+
+	https://graph.facebook.com/v2.6/<USER_ID>?access_token=PAGE_ACCESS_TOKEN
+
+Response:
+
+	{
+	  "first_name": "Peter",
+	  "last_name": "Chang",
+	  "profile_pic": "https://fbcdn-profile-a.akamaihd.net/hprofile-ak-xpf1/v/t1.0-1/p200x200/13055603_10105219398495383_8237637584159975445_n.jpg?oh=1d241d4b6d4dac50eaf9bb73288ea192&oe=57AF5C03&__gda__=1470213755_ab17c8c8e3a0a447fed3f272fa2179ce",
+	  "locale": "en_US",
+	  "timezone": -7,
+	  "gender": "male"
+	}
+
+* Platform Guidelines
+
+Messenger Codes and Links: *https://m.me/cnn*
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2178-6/13292694_1160483990669203_827170775_n.png 400 _
+
+.caption When using a plugin, consider adding text around it that explains what will happen when people click or tap the button. This will help set expectations about the experience you’re providing in Messenger.
+
+* Platform Guidelines - Onboarding
+
+- Messenger Greeting
+- Get Started Button
+- Welcome Message
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2178-6/13311293_510674832466364_1014329030_n.png 400 _
+
+* Platform Guidelines - Interactions
+
+Messaging, Structured Messages, Buttons
+
+Updates and Alerts
+
+Writing Best Pratices
+
+.link https://developers.facebook.com/docs/messenger-platform/guidelines reference
+
+* Acceptable Use Case Examples and Explanations
+
+The Send/Receive API is intended for *non-promotional* messages that *facilitate* a pre-existing transaction, provide other *customer* *support* actions, or deliver content requested by a person. [[https://developers.facebook.com/docs/messenger-platform/app-review#examples_acceptable][View other examples]]
+
+.image https://scontent-tpe1-1.xx.fbcdn.net/t39.2178-6/12995602_984225701632999_1197421034_n.png 450 _
+
